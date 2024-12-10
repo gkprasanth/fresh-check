@@ -1,50 +1,85 @@
-import React from "react";
 import { Link } from "react-router-dom";
+import { useUserStore } from "../store/userStore";
 
-const Navbar = ({ user, onLogout }) => (
-  <div className="bg-white shadow-md fixed top-0 left-0 w-full z-50">
-    <div className="container mx-auto flex justify-between items-center p-4">
-      <h1 className="text-xl font-bold text-blue-500">Freshness Checker</h1>
-      <div className="flex items-center space-x-6">
-        <Link to="/gardening-tips" className="text-blue-500 hover:underline">
-          Gardening Tips
-        </Link>
-        <Link to="/markets-nearby" className="text-blue-500 hover:underline">
-          Markets Nearby
-        </Link>
-        <Link to="/veg-fruits-guide" className="text-blue-500 hover:underline">
-          Veg & Fruits
-        </Link>
-        {user ? (
-          <div className="flex items-center space-x-4">
-            <Link to="/profile" className="flex items-center space-x-2">
-              <img
-                src={user.profilePic}
-                alt="Profile"
-                className="w-8 h-8 rounded-full"
-              />
-              <span className="text-gray-700">{user.name}</span>
+const Navbar = () => {
+  const user = useUserStore((state) => state.user); // Access the user state
+  const clearUser = useUserStore((state) => state.clearUser); // Access the logout function
+
+  const handleLogout = () => {
+    clearUser(); // Clear the user state on logout
+  };
+
+  return (
+    <nav className="bg-green-600 p-4 shadow-md">
+      <div className="container mx-auto flex justify-between items-center">
+        {/* Logo or Brand Name */}
+        <div className="text-white text-xl font-bold">
+          <Link to="/home">FreshCheck</Link>
+        </div>
+
+        {/* Navigation Links */}
+        <ul className="flex items-center space-x-6">
+          <li>
+            <Link to="/vegetables" className="text-white hover:text-gray-200">
+              Vegetables
             </Link>
-            <button
-              onClick={onLogout}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-            >
-              Logout
-            </button>
-          </div>
-        ) : (
-          <div className="flex space-x-4">
-            <Link to="/login" className="text-blue-500 hover:underline">
-              Login
+          </li>
+          <li>
+            <Link to="/fruits" className="text-white hover:text-gray-200">
+              Fruits
             </Link>
-            <Link to="/signup" className="text-blue-500 hover:underline">
-              Signup
+          </li>
+          <li>
+            <Link to="/maps" className="text-white hover:text-gray-200">
+              Maps
             </Link>
-          </div>
-        )}
+          </li>
+          <li>
+            <Link to="/gardening" className="text-white hover:text-gray-200">
+              Gardening Tips
+            </Link>
+          </li>
+
+          {/* Conditional Links */}
+          {!user && (
+            <>
+              <li>
+                <Link
+                  to="/login"
+                  className="text-white bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 transition"
+                >
+                  Login
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/signup"
+                  className="text-white bg-yellow-500 px-4 py-2 rounded hover:bg-yellow-600 transition"
+                >
+                  Sign Up
+                </Link>
+              </li>
+            </>
+          )}
+          {user && (
+            <>
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="text-white bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition"
+                >
+                  Log Out
+                </button>
+              </li>
+              <li>
+                <span className="text-white font-medium">Welcome, {user.name}!</span>
+              </li>
+            </>
+          )}
+        </ul>
       </div>
-    </div>
-  </div>
-);
+    </nav>
+  );
+};
 
 export default Navbar;

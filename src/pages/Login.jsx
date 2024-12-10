@@ -1,98 +1,116 @@
-import React, { useState } from "react";
-import { account } from "../config"; // Ensure this points to your Appwrite config file
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { account } from "../config";
+import { useUserStore } from "../store/userStore"; // Import Zustand store
 
-const Login = ({ onLogin }) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+// Function to check if the user is already logged in
+const checkSession = async () => {
+  try {
+    const currentUser = await account.get();
+    return currentUser;
+  } catch (err) {
+    console.error("Session check failed: ", err);
+    return null;
+  }
+};
+
+const Login = () => {
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const setUser = useUserStore((state) => state.setUser); // Zustand function to set user details
 
-  const handleLogin = async (e) => {
+  // Handle input change
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-  
     try {
-      // Check for an active session
-      const currentSession = await account.getSession("current");
-      if (currentSession) {
-        const userData = {
-          name: currentSession.userName || "User",
-          profilePic: "https://via.placeholder.com/50", // Default profile picture
-        };
-        onLogin(userData);
-        navigate("/home");
+      const currentUser = await checkSession();
+      if (currentUser) {
+        // If the user is logged in, update the Zustand store
+        setUser({
+          email: currentUser.email,
+          name: currentUser.name,
+          userId: currentUser.$id,
+        });
+        console.log(currentUser)
+        navigate("/home"); // Navigate to the homepage
         return;
       }
+
+      // If no session, create a new session
+      await account.createEmailPasswordSession(formData.email, formData.password);
+      const user = await account.get();
+      setUser({
+        email: user.email,
+        name: user.name,
+        userId: user.$id,
+      });
+      console.log(user)
+      navigate("/home"); // Navigate to the home page
     } catch (err) {
-      // No active session found, continue with login
-      console.log("No active session found, creating a new one.");
-    }
-  
-    try {
-      // Create a new session if no active session exists
-      const session = await account.createEmailPasswordSession(email, password);
-      const userData = {
-        name: session.name, // Ensure this matches the Appwrite user object
-        profilePic: session.profilePic || "https://via.placeholder.com/50",
-      };
-      onLogin(userData);
-      navigate("/home");
-    } catch (err) {
-      setError(err.message || "An error occurred");
+      console.error(err);
+      setError(err.message || "An error occurred. Please try again.");
     }
   };
-  
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Login
-        </h1>
-        <form onSubmit={handleLogin} className="space-y-4">
-          {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
-          )}
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email
+    <div
+      className="flex items-center justify-center min-h-screen bg-cover bg-center"
+      style={{ backgroundImage: "url('/path/to/your/background-image.jpg')" }}
+    >
+      <div className="bg-white bg-opacity-75 rounded-lg p-10 max-w-md w-full">
+        <h1 className="text-4xl font-bold text-blue-600 text-center mb-8">Login</h1>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-6">
+            <label htmlFor="email" className="block text-lg font-medium text-gray-700">
+              Email Address
             </label>
             <input
-              id="email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="mt-2 block w-full px-6 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-lg"
+              placeholder="Enter your email"
               required
             />
           </div>
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
+          <div className="mb-6">
+            <label htmlFor="password" className="block text-lg font-medium text-gray-700">
               Password
             </label>
             <input
-              id="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              className="mt-2 block w-full px-6 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-lg"
+              placeholder="Enter your password"
               required
             />
           </div>
+          {error && <p className="mb-6 text-red-500 text-center font-medium">{error}</p>}
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-600 transition"
+            className="w-full bg-orange-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300"
           >
-            Login
+            Log In
           </button>
         </form>
+        <p className="mt-6 text-center text-lg text-gray-600">
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-blue-600 hover:underline text-lg">
+            Sign Up
+          </Link>
+        </p>
       </div>
     </div>
   );

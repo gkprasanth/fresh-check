@@ -1,6 +1,6 @@
 // appwrite.js
-import { Client, Account } from 'appwrite';
-//
+import { Client, Account, Databases, ID } from "appwrite";
+
 // Initialize the Appwrite client
 const client = new Client();
 
@@ -10,5 +10,7 @@ client
 
 // Export Account instance for authentication
 export const account = new Account(client);
+export const databases = new Databases(client);
+ export { ID };
 
 export default client;
